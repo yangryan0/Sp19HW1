@@ -3,55 +3,75 @@ DROP VIEW IF EXISTS q0, q1i, q1ii, q1iii, q1iv, q2i, q2ii, q2iii, q3i, q3ii, q3i
 -- Question 0
 CREATE VIEW q0(era) 
 AS
-  SELECT 1 -- replace this line
+  select max(era)
+  from pitching
 ;
 
 -- Question 1i
 CREATE VIEW q1i(namefirst, namelast, birthyear)
 AS
-  SELECT 1, 1, 1 -- replace this line
+  select namefirst, namelast, birthyear
+  from people
+  where weight > 300
 ;
 
 -- Question 1ii
 CREATE VIEW q1ii(namefirst, namelast, birthyear)
 AS
-  SELECT 1, 1, 1 -- replace this line
+  select namefirst, namelast, birthyear
+  from people
+  where rtrim(namefirst) like '% %'
 ;
 
 -- Question 1iii
 CREATE VIEW q1iii(birthyear, avgheight, count)
 AS
-  SELECT 1, 1, 1 -- replace this line
+  select birthyear, avg(height), count(*)
+  from people
+  group by birthyear
+  order by birthyear asc
 ;
 
 -- Question 1iv
 CREATE VIEW q1iv(birthyear, avgheight, count)
 AS
-  SELECT 1, 1, 1 -- replace this line
+  select *
+  from q1iii
+  where avgheight > 70
+  order by birthyear asc
 ;
 
 -- Question 2i
 CREATE VIEW q2i(namefirst, namelast, playerid, yearid)
 AS
-  SELECT 1, 1, 1, 1 -- replace this line
+  select people.namefirst, people.namelast, people.playerid, halloffame.yearid
+  from halloffame, people
+  where inducted = 'Y' and halloffame.playerid = people.playerid
+  order by yearid desc
 ;
 
 -- Question 2ii
 CREATE VIEW q2ii(namefirst, namelast, playerid, schoolid, yearid)
 AS
-  SELECT 1, 1, 1, 1, 1 -- replace this line
+  select q2i.namefirst, q2i.namelast, q2i.playerid, c.schoolid, q2i.yearid
+  from q2i, collegeplaying as c, schools as s
+  where q2i.playerid = c.playerid and c.schoolid = s.schoolid and s.schoolstate = 'CA'
+  order by yearid desc, schoolid, playerid asc
 ;
 
 -- Question 2iii
 CREATE VIEW q2iii(playerid, namefirst, namelast, schoolid)
 AS
-  SELECT 1, 1, 1, 1 -- replace this line
+  select q2i.playerid, namefirst, namelast, schoolid
+  from q2i
+  left join collegeplaying c on q2i.playerid = c.playerid
+  order by playerid desc, schoolid asc
 ;
 
 -- Question 3i
 CREATE VIEW q3i(playerid, namefirst, namelast, yearid, slg)
 AS
-  SELECT 1, 1, 1, 1, 1 -- replace this line
+  
 ;
 
 -- Question 3ii
