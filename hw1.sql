@@ -1,4 +1,4 @@
-DROP VIEW IF EXISTS q0, q1i, q1ii, q1iii, q1iv, q2i, q2ii, q2iii, q3i, q3ii, q3iii, q4i, q4ii, q4iii, q4iv, q4v;
+DROP VIEW IF EXISTS q0, q1i, q1ii, q1iii, q1iv, q2i, q2ii, q2iii, q3i, q3ii, q3iii_helper, q3iii, q4i, q4ii_helper, salary_floor, tenth, inter, inter3, q4ii, q4iii, q4iv, q4v;
 
 -- Question 0
 CREATE VIEW q0(era) 
@@ -81,7 +81,7 @@ AS
 -- Question 3ii
 CREATE VIEW q3ii(playerid, namefirst, namelast, lslg)
 AS
-  select p.playerid, namefirst, namelast, sum(b.h - (b.h2b + b.h3b + b.hr)) + (sum(b.h2b) * 2) + (sum(b.h3b) * 3) + (sum(b.hr) * 4) / sum(b.ab) as lslg
+  select p.playerid, namefirst, namelast, cast(sum(b.h) - (sum(b.h2b) + sum(b.h3b) + sum(b.hr))  + (sum(b.h2b) * 2) + (sum(b.h3b) * 3) + (sum(b.hr) * 4) as float) / cast(sum(b.ab) as float) as lslg
   from batting b, people p
   where p.playerid = b.playerid
   group by p.playerid
@@ -90,23 +90,85 @@ AS
   limit 10
 ;
 
+CREATE VIEW q3iii_helper(playerid, namefirst, namelast, lslg)
+AS
+  select p.playerid, namefirst, namelast, cast(sum(b.h) - (sum(b.h2b) + sum(b.h3b) + sum(b.hr))  + (sum(b.h2b) * 2) + (sum(b.h3b) * 3) + (sum(b.hr) * 4) as float) / cast(sum(b.ab) as float) as lslg
+  from batting b, people p
+  where p.playerid = b.playerid
+  group by p.playerid
+  having sum(b.ab) > 50
+  order by lslg desc, playerid asc
+;
+
+
+
 -- Question 3iii
 CREATE VIEW q3iii(namefirst, namelast, lslg)
 AS
-  SELECT 1, 1, 1 -- replace this line
+  select namefirst, namelast, lslg
+  from q3iii_helper q
+  where lslg >
+  	any(select cast(sum(b.h) - (sum(b.h2b) + sum(b.h3b) + sum(b.hr)) + (sum(b.h2b) * 2) + (sum(b.h3b) * 3) + (sum(b.hr) * 4) as float) / cast(sum(b.ab) as float) as lslgwillie
+  	from batting b
+  	where b.playerid = 'mayswi01'
+  	group by b.playerid)
 ;
 
 -- Question 4i
 CREATE VIEW q4i(yearid, min, max, avg, stddev)
 AS
-  SELECT 1, 1, 1, 1, 1 -- replace this line
+  select yearid, MIN(salary), MAX(salary), AVG(salary), stddev(salary)
+  from salaries
+  group by yearid
+  order by yearid asc
 ;
+
+create view q4ii_helper(salary)
+as
+  select salary
+  from salaries
+  where yearid = 2016
+;
+
+create view salary_floor(floors, min, floor_width)
+as
+  select floor((salary  - (select min(salary) from q4ii_helper))/ (((select max(salary) from q4ii_helper) - (select min(salary) from q4ii_helper)) / 10.0)) * (((select max(salary) from q4ii_helper) - (select min(salary) from q4ii_helper)) / 10.0), (select min(salary) from q4ii_helper), (((select max(salary) from q4ii_helper) - (select min(salary) from q4ii_helper)) / 10.0)
+  from q4ii_helper
+;
+
+CREATE VIEW tenth(binid, low, high, count)
+AS
+  select (floors) / floor_width, floors + min, floors + min + floor_width, count(*) as count
+  from salary_floor
+  group by floors + min, floors, floor_width
+  order by floors + min
+;
+
+create view inter(binid, low, high, count)
+as
+  select binid, low, high, count + (select max(a.count) from tenth a where a.binid=10)
+  from tenth
+  where binid = 9
+;
+
+create view inter3(binid, low, high, count)
+as
+  select binid, low, high, count
+  from tenth
+  order by binid asc
+  limit 9
+;
+  
 
 -- Question 4ii
 CREATE VIEW q4ii(binid, low, high, count)
 AS
-  SELECT 1, 1, 1, 1 -- replace this line
+  select * from inter3
+  union all
+  select * from inter
 ;
+
+
 
 -- Question 4iii
 CREATE VIEW q4iii(yearid, mindiff, maxdiff, avgdiff)
